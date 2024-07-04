@@ -57,6 +57,12 @@ class BaseOptions():
         # wandb parameters
         parser.add_argument('--use_wandb', action='store_true', help='if specified, then init wandb logging')
         parser.add_argument('--wandb_project_name', type=str, default='CycleGAN-and-pix2pix', help='specify wandb project name')
+        # Option to noise the weights and biases of the generators (TESTED ONLY AT TEST TIME,WITHOUT ADDING NOISE LAYER TO THE RESIDUAL BLOCKS)
+        parser.add_argument('--NoiseWB', type=bool, default=False, help='Choose if gaussian noise should be added to weights and biases')
+        parser.add_argument('--NoiseWBSTD', type=float, default=0.001, help='Gaussian noise standard deviation')
+        # Option to noise the outputs of the residual blocks (TESTED ONLY AT TEST TIME,WITHOUT ADDING NOISE LAYER TO THE WEIGHTS AND BIASES)
+        parser.add_argument('--NoiseLayer', type=bool, default=False, help='Choose if gaussian noise should be added to weights and biases')
+        parser.add_argument('--NoiseLayerSTD', type=float, default=0.001, help='Gaussian noise standard deviation')        
         self.initialized = True
         return parser
 

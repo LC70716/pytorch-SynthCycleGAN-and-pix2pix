@@ -117,7 +117,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return net
 
 
-def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, NoiseLayer=False,NoiseLayerSTD=0.01,gpu_ids=[]):
     """Create a generator
 
     Parameters:
@@ -148,9 +148,9 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     norm_layer = get_norm_layer(norm_type=norm)
 
     if netG == 'resnet_9blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,NoiseLayer=NoiseLayer,NoiseLayerSTD=NoiseLayerSTD, n_blocks=9)
     elif netG == 'resnet_6blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,NoiseLayer=NoiseLayer,NoiseLayerSTD=NoiseLayerSTD, n_blocks=6)
     elif netG == 'unet_128':
         net = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif netG == 'unet_256':
@@ -319,7 +319,7 @@ class ResnetGenerator(nn.Module):
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
 
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, padding_type='reflect'):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,NoiseLayer=False,NoiseLayerSTD=0.01, padding_type='reflect'):
         """Construct a Resnet-based generator
 
         Parameters:
@@ -352,8 +352,7 @@ class ResnetGenerator(nn.Module):
 
         mult = 2 ** n_downsampling
         for i in range(n_blocks):       # add ResNet blocks
-
-            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias,NoiseLayer=NoiseLayer,NoiseLayerSTD=NoiseLayerSTD)]
 
         for i in range(n_downsampling):  # add upsampling layers
             mult = 2 ** (n_downsampling - i)
@@ -377,7 +376,7 @@ class ResnetGenerator(nn.Module):
 class ResnetBlock(nn.Module):
     """Define a Resnet block"""
 
-    def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+    def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias,NoiseLayer,NoiseLayerSTD):
         """Initialize the Resnet block
 
         A resnet block is a conv block with skip connections
@@ -386,9 +385,11 @@ class ResnetBlock(nn.Module):
         Original Resnet paper: https://arxiv.org/pdf/1512.03385.pdf
         """
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, use_bias)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, use_bias,NoiseLayer,NoiseLayerSTD)
+        self.NoiseLayer = NoiseLayer
+        self.NoiseLayerSTD = NoiseLayerSTD
 
-    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, use_bias,NoiseLayer,NoiseLayerSTD):
         """Construct a convolutional block.
 
         Parameters:
@@ -424,15 +425,27 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias), norm_layer(dim)]
-
+        
+        if NoiseLayer == False:
+        
+            conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias), norm_layer(dim)] # deepest
+        
+        if NoiseLayer == True:
+            conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),NoiseInjectionLayer(NoiseLayerSTD), norm_layer(dim)]
+        
         return nn.Sequential(*conv_block)
 
     def forward(self, x):
         """Forward function (with skip connections)"""
         out = x + self.conv_block(x)  # add skip connections
         return out
-
+class NoiseInjectionLayer(nn.Module):
+    def __init__(self,NoiseLayerSTD):
+        super().__init__()
+        self.NoiseLayerSTD = NoiseLayerSTD
+    def forward(self, x):
+        noise = torch.randn_like(x) * self.NoiseLayerSTD
+        return x + noise
 
 class UnetGenerator(nn.Module):
     """Create a Unet-based generator"""

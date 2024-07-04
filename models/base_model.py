@@ -4,7 +4,16 @@ from collections import OrderedDict
 from abc import ABC, abstractmethod
 from . import networks
 
-
+def add_gaussian_noise(state_dict, std_dev=0.0001, keys_to_exclude=["model.1.weight","model.1.bias","model.4.weight","model.4.bias","model.7.weight","model.7.bias"
+                                                                  "model.19.weight","model.19.bias","model.22.weight","model.22.bias","model.26.weight","model.26.bias"]):
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        if key in keys_to_exclude:  # Skip excluded keys
+            new_state_dict[key] = value  
+        else:
+            noise = torch.randn_like(value) * std_dev
+            new_state_dict[key] = value + noise          
+    return new_state_dict
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
     To create a subclass, you need to implement the following five functions:
@@ -32,6 +41,8 @@ class BaseModel(ABC):
         self.opt = opt
         self.gpu_ids = opt.gpu_ids
         self.isTrain = opt.isTrain
+        self.NoiseWB = opt.NoiseWB
+        self.NoiseWBSTD = opt.NoiseWBSTD
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')  # get device name: CPU or GPU
         self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)  # save all the checkpoints to save_dir
         if opt.preprocess != 'scale_width':  # with [scale_width], input images might have different sizes, which hurts the performance of cudnn.benchmark.
@@ -172,7 +183,7 @@ class BaseModel(ABC):
                 state_dict.pop('.'.join(keys))
         else:
             self.__patch_instance_norm_state_dict(state_dict, getattr(module, key), keys, i + 1)
-
+    
     def load_networks(self, epoch):
         """Load all the networks from the disk.
 
@@ -196,7 +207,11 @@ class BaseModel(ABC):
                 # patch InstanceNorm checkpoints prior to 0.4
                 for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
                     self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
-                net.load_state_dict(state_dict)
+                    print(key)
+                if self.NoiseWB:
+                    net.load_state_dict(add_gaussian_noise(state_dict,std_dev=self.NoiseWBSTD))
+                else:
+                    net.load_state_dict(state_dict) 
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture
