@@ -8,6 +8,7 @@ After following the setup instructions from the original authors:
 - download and extract the folders from the following link https://we.tl/t-9aq1p4qYId
 - Place the checkpoints directory in the repository
 - Place the t1w folder in the dataset folder
+
 To run the model use the following
  ```bash
 python test.py --dataroot ./datasets/t1w --name t1w_cyclegan_naive_correct --model cycle_gan --input_nc 1 --output_nc 1 --results_dir ./results/<directory_where_the_resulting_images_are_saved> --num_test 1000
