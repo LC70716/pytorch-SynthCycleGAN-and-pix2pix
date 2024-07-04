@@ -1,3 +1,28 @@
+# Synthetic image generation from pre-trained CycleGAN model
+
+The possibility of synthetic image generation was implemented in two ways for ResNet based generators: Adding a gaussian noise layer to each ResNet block (see `class ResnetBlock(nn.Module)` in `models/networks.py`) or adding noise to the weights and biases of the convolution layers of each ResNet block (see `add_gaussian_noise` in `models/base_model.py`). These methods are meant to be used only at test time and have been tested only separately.
+The `keys_to_exclude` variable in `add_gaussian_noise` is used to not add noise to the upsampling and downsampling layers: these should not change when using a different model ResNet model (which was defined and trained following the code produced by the original authors) but it is advisable to check the bash output when loading the generators.
+
+## How to produce synthetic images from a pretrained model
+After following the setup instructions from the original authors:
+- download and extract the folders from the following link https://we.tl/t-9aq1p4qYId
+- Place the checkpoints directory in the repository
+- Place the t1w folder in the dataset folder
+To run the model use the following
+ ```bash
+python test.py --dataroot ./datasets/t1w --name t1w_cyclegan_naive_correct --model cycle_gan --input_nc 1 --output_nc 1 --results_dir ./results/<directory_where_the_resulting_images_are_saved> --num_test 1000
+```
+adding the following flags depending on the method of your choice:
+-`--NoiseLayer True` and `--NoiseLayerSTD <your_std_value_of_choice>` to add the noise layer to the blocks
+-`--NoiseWB True` and `--NoiseWBSTD <your_std_value_of_choice>` to add noise to the weights and biases
+
+The file names of the synthetic images, found in the `results` folder, are those which end with `_rec_B.png`: they are the result of `G_A(G_B(input))`.
+
+## Practical differences between the methods
+The Layer method allows for the generation of multiple synthetic images with one network loading: simply add to the `TestB` folder of the relevant dataset multiple copies of the same image.
+The weights and biases method does NOT allow for this due to the fact that the noise is added when the generators are loading: to produce multiple images from the same real one it is necessary to load the network again.
+
+
 
 <img src='imgs/horse2zebra.gif' align="right" width=384>
 
