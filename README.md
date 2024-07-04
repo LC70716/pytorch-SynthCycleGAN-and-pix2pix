@@ -22,12 +22,6 @@ The file names of the synthetic images, found in the `results` folder, are those
 The Layer method allows for the generation of multiple synthetic images with one network loading: simply add to the `TestB` folder of the relevant dataset multiple copies of the same image.
 The weights and biases method does NOT allow for this due to the fact that the noise is added when the generators are loading: to produce multiple images from the same real one it is necessary to load the network again.
 
-
-
-<img src='imgs/horse2zebra.gif' align="right" width=384>
-
-<br><br><br>
-
 # CycleGAN and pix2pix in PyTorch
 
 **New**:  Please check out [img2img-turbo](https://github.com/GaParmar/img2img-turbo) repo that includes both pix2pix-turbo and CycleGAN-Turbo. Our new one-step image-to-image translation methods can support both paired and unpaired training and produce better results by leveraging the pre-trained StableDiffusion-Turbo model. The inference time for 512x512 image is 0.29 sec on A6000 and 0.11 sec on A100.
