@@ -1,7 +1,7 @@
 # Synthetic image generation from pre-trained CycleGAN model
 
 The possibility of synthetic image generation was implemented in two ways for ResNet based generators: Adding a gaussian noise layer to each ResNet block (see `class ResnetBlock(nn.Module)` in `models/networks.py`) or adding noise to the weights and biases of the convolution layers of each ResNet block (see `add_gaussian_noise` in `models/base_model.py`). These methods are meant to be used only at test time and have been tested only separately.
-The `keys_to_exclude` variable in `add_gaussian_noise` is used to not add noise to the upsampling and downsampling layers: these should not change when using a different model ResNet model (which was defined and trained following the code produced by the original authors) but it is advisable to check the bash output when loading the generators.
+The `keys_to_exclude` variable in `add_gaussian_noise` is used to not add noise to the upsampling and downsampling layers: these should not change when using a different ResNet generator model (which was defined and trained following the code produced by the original authors) but it is advisable to check the bash output when loading the generators.
 
 ## How to produce synthetic images from a pretrained model
 After following the setup instructions from the original authors:
