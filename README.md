@@ -5,7 +5,7 @@ The `keys_to_exclude` variable in `add_gaussian_noise` is used to not add noise 
 
 ## How to produce synthetic images from a pretrained model
 After following the setup instructions from the original authors:
-- download and extract the folders from the following link https://we.tl/t-9aq1p4qYId
+- download and extract the folders from the following link (expired)
 - Place the checkpoints directory in the repository
 - Place the t1w folder in the dataset folder
 
